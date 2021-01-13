@@ -1,3 +1,7 @@
 *.exe
 table_str
 
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake*
+Makefile
