@@ -23,30 +23,37 @@ int table_add(table_str t, const char *str, size_t size) {
     }
 
     // Have enough space
-    size_t idx1;
-    size_t idx2;
-    idx1 = (header->size);
-    idx2 = idx1 + size;
-    
-    // Copy the characters
-    int i;
-    int j;
-    for (i = idx1, j = 0; i < idx2; i++) {
-        t[i] = str[j];
-        j++;
-    }
-    
-    t[++i] = '\0';
-    header->size += size;
+     size_t idx1;
+     size_t idx2;
+     idx1 = (header->size);
+     idx2 = idx1 + size;
 
-    return header->size;
+     // Copy the characters
+     int i;
+     int j;
+     for (i = idx1, j = 0; i < idx2; i++, j++)
+         t[i] = str[j];
+     
+     // Try to get this to work (Fail)
+     /*
+        size_t idx1;
+        idx1 = t + (header->size);
+        memcpy(idx1, str, size);
+
+        t[header->size + size] = '\0';
+     */
+     
+     t[++i] = '\0';
+     header->size += size;
+
+     return header->size;
 }
 
 
 /* 
-    Adviceed to use this function over printf because printf works based on \0 chars
-    This function uses the length of the array from the header
-*/
+   Advised to use this function over printf because printf works based on \0 chars
+   This function uses the length of the array from the header
+ */
 void table_print(table_str t) {
     int i;
     size_t size = get_header(t)->size;
@@ -59,7 +66,7 @@ void table_print(table_str t) {
 table_str table_init(size_t len) {
     size_t header_size = sizeof(Header);
     void *sh = (void *)malloc(header_size + len); 
-    
+
     Header *h;    
     h  = (Header *) sh;
     h->size = 0;
@@ -81,13 +88,13 @@ int main() {
     table_str table;
     /* hello bob */
     table = table_init(100);
-    
+
     const char test_str[] = "Hello jhon its been a while";
     const char test_str1[] = "watch me";
-    table_add(table, test_str , sizeof(test_str));
-    table_add(table, test_str1, sizeof(test_str1));
+    table_add(table, test_str , strlen(test_str));
+    table_add(table, test_str1, strlen(test_str1));
     printf("string = %s\n", table);
     table_print(table);
-    
+
     table_free(table);
 }
