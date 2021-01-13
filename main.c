@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "table_str.h"
+#include <time.h>
 
+/* Returns the header struct for the given string */
 Header *get_header(table_str t) {
     size_t header_size = sizeof(Header);
     Header *h = (Header *)(t - header_size);
@@ -16,7 +18,7 @@ Header *get_header(table_str t) {
 int table_add(table_str t, const char *str, size_t size) {
     Header *header = get_header(t);
     if (header->capacity < header->size + size) {
-        // Realloc the str
+        // Realloc the string
         header->capacity += size;
         t = (table_str)realloc(t, (header->capacity) * sizeof(char));
         if (t == NULL) return -1;
@@ -44,6 +46,7 @@ int table_add(table_str t, const char *str, size_t size) {
      */
      
      t[++i] = '\0';
+     // Change the size of string to new size
      header->size += size;
 
      return header->size;
@@ -86,13 +89,22 @@ void table_free(table_str t) {
 
 int main() {
     table_str table;
-    /* hello bob */
     table = table_init(100);
 
     const char test_str[] = "Hello jhon its been a while";
     const char test_str1[] = "watch me";
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+    /* Do the work. */
+
     table_add(table, test_str , strlen(test_str));
     table_add(table, test_str1, strlen(test_str1));
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("Time taken = %f\n", cpu_time_used); 
+
     printf("string = %s\n", table);
     table_print(table);
 
