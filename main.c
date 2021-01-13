@@ -35,12 +35,18 @@ int table_add(table_str t, const char *str, size_t size) {
         t[i] = str[j];
         j++;
     }
+    
     t[++i] = '\0';
     header->size += size;
 
     return header->size;
 }
 
+
+/* 
+    Adviceed to use this function over printf because printf works based on \0 chars
+    This function uses the length of the array from the header
+*/
 void table_print(table_str t) {
     int i;
     size_t size = get_header(t)->size;
@@ -65,6 +71,7 @@ table_str table_init(size_t len) {
     return s;
 }
 
+/* Free all the memory asscociated with the string including the header */
 void table_free(table_str t) {
     Header *h = get_header(t);
     free(h);
@@ -74,12 +81,13 @@ int main() {
     table_str table;
     /* hello bob */
     table = table_init(100);
-    Header *h = get_header(table);
     
-    printf("Capcacity = %ld\n", h->capacity);
     const char test_str[] = "Hello jhon its been a while";
+    const char test_str1[] = "watch me";
     table_add(table, test_str , sizeof(test_str));
+    table_add(table, test_str1, sizeof(test_str1));
     printf("string = %s\n", table);
     table_print(table);
+    
     table_free(table);
 }
