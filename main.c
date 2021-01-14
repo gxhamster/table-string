@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
-#include "table_str.h"
 #include <time.h>
+#include "table_str.h"
 
 /* Returns the header struct for the given string */
 Header *get_header(table_str t) {
@@ -11,6 +11,21 @@ Header *get_header(table_str t) {
     Header *h = (Header *)(t - header_size);
 
     return h;
+}
+
+void make_room_table(table_str t, size_t new_len) {
+    Header *header = get_header(t); 
+    void *sh;
+    void *new_sh;
+
+    sh = (void *)header;
+
+    // Realloc the string
+    header->capacity += new_len;
+    new_sh = realloc(sh, sizeof(Header) + (header->capacity));
+    if (new_sh == NULL) exit(-1);
+    t = new_sh + sizeof(Header);
+    header = (Header *) new_sh;
 }
 
 /*
@@ -28,12 +43,8 @@ int table_add(table_str t, const char *str, size_t size) {
     void *new_sh;
 
     if (header->capacity < header->size + size) {
-        // Realloc the string
         // +1 for the null character
-        header->capacity += size + 1;
-        new_sh = realloc(sh, sizeof(Header) + (header->capacity));
-        t = new_sh + sizeof(Header);
-        header = (Header *) new_sh;
+        make_room_table(t, size + 1);
         if (t == NULL) return -1;
     }
 
@@ -104,7 +115,7 @@ int main() {
     table = table_init(1);
 
     const char test_str[] = "Hello jhon its been a while";
-    const char test_str1[] = "watch me";
+    const char test_str1[] = "The BASIC implementation uses a preprocessor that can generate BASIC code that is compatible with both C64 BASIC (CBM v2) and QBasic. The C64 mode has been tested with cbmbasic (the patched version is currently required to fix issues with line input) and the QBasic mode has been tested with qb64";
 
     clock_t start, end;
     double cpu_time_used;
@@ -119,7 +130,7 @@ int main() {
     printf("Time taken = %lf\n", cpu_time_used); 
 
     printf("String = %s\n", table);
-    printf("Capacity = %d\n", get_header(table)->capacity);
+    printf("Capacity = %lu\n", get_header(table)->capacity);
     table_print(table);
 
     table_free(table);
