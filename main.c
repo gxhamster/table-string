@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <memory.h>
 #include "table_str.h"
 #include <time.h>
 
@@ -16,40 +18,50 @@ Header *get_header(table_str t) {
     returns -1 on failure
 */
 int table_add(table_str t, const char *str, size_t size) {
+    void *sh;
     Header *header = get_header(t);
+    /* 
+        Get the starting point of the string
+        If you try to use realloc direclty on t it fails
+    */
+    sh = (void *)header;
+    void *new_sh;
+
     if (header->capacity < header->size + size) {
         // Realloc the string
-        header->capacity += size;
-        t = (table_str)realloc(t, (header->capacity) * sizeof(char));
+        // +1 for the null character
+        header->capacity += size + 1;
+        new_sh = realloc(sh, sizeof(Header) + (header->capacity));
+        t = new_sh + sizeof(Header);
+        header = (Header *) new_sh;
         if (t == NULL) return -1;
     }
 
     // Have enough space
-     size_t idx1;
-     size_t idx2;
-     idx1 = (header->size);
-     idx2 = idx1 + size;
 
-     // Copy the characters
-     int i;
-     int j;
-     for (i = idx1, j = 0; i < idx2; i++, j++)
-         t[i] = str[j];
-     
-     // Try to get this to work (Fail)
-     /*
-        size_t idx1;
-        idx1 = t + (header->size);
-        memcpy(idx1, str, size);
+//      size_t idx1;
+//      size_t idx2;
+//      idx1 = (header->size);
+//      idx2 = idx1 + size;
+// 
+//      // Copy the characters
+//      int i;
+//      int j;
+//      for (i = idx1, j = 0; i < idx2; i++, j++)
+//          t[i] = str[j];
+    //  t[++i] = '\0';
 
-        t[header->size + size] = '\0';
-     */
-     
-     t[++i] = '\0';
-     // Change the size of string to new size
-     header->size += size;
+    // Try to get this to work (Finally)
+    // Copy the characters
+    char *idx1;
+    idx1 = &t[(header->size)];
+    memcpy(idx1, str, size);
+    t[header->size + size] = '\0';
 
-     return header->size;
+    // Change the size of string to new size
+    header->size += size;
+
+    return header->size;
 }
 
 
@@ -89,23 +101,25 @@ void table_free(table_str t) {
 
 int main() {
     table_str table;
-    table = table_init(100);
+    table = table_init(1);
 
     const char test_str[] = "Hello jhon its been a while";
     const char test_str1[] = "watch me";
+
     clock_t start, end;
     double cpu_time_used;
-
     start = clock();
-    /* Do the work. */
 
+    /* Do the work. */
     table_add(table, test_str , strlen(test_str));
     table_add(table, test_str1, strlen(test_str1));
+
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("Time taken = %f\n", cpu_time_used); 
+    printf("Time taken = %lf\n", cpu_time_used); 
 
-    printf("string = %s\n", table);
+    printf("String = %s\n", table);
+    printf("Capacity = %d\n", get_header(table)->capacity);
     table_print(table);
 
     table_free(table);

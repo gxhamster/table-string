@@ -2,9 +2,6 @@
 > Table string is a library created to ease the use of strings in c
 > It is made to be performant and is heavily inspired 
 
-
-One to two paragraph statement about your product and what it does.
-
 ![](header.png)
 
 ## Installation
@@ -14,13 +11,19 @@ OS X & Linux:
 ```sh
 cmake .
 make 
+./table_str
+```
+Windows:
+
+```sh
+cmake . -G "MinGW Makefiles"
+make
+table_str.exe
 ```
 
 ## Usage example
 
 A few motivating and useful examples of how your product can be used. Spice this up with code blocks and potentially more screenshots.
-
-_For more examples and usage, please refer to the [Wiki][wiki]._
 
 ## Development setup
 
@@ -28,18 +31,14 @@ You will need cmake for this project to create required Makefiles
 I havent tested fully on windows
 But i think you have to use MinGW
 
-```sh
-cmake . -G "MinGW Makefiles"
-make
-```
 
 ## Meta
 
-gxhamster – [@YourTwitter](https://twitter.com/dbader_org) – iyaanazeez757@gmail.com
+gxhamster – [@gxhamster](https://twitter.com/dbader_org) – iyaanazeez757@gmail.com
 
 Distributed under the MIT license. 
 
-[https://github.com/yourname/github-link](https://github.com/dbader/)
+[https://github.com/gxhamster/github-link](https://github.com/gxhamster/)
 
 ## Contributing
 
