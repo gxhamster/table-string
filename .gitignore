@@ -1,6 +1,6 @@
 *.exe
 table_str
-
+tags
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake*

@@ -48,25 +48,12 @@ int table_add(table_str t, const char *str, size_t size) {
         if (t == NULL) return -1;
     }
 
-    // Have enough space
 
-//      size_t idx1;
-//      size_t idx2;
-//      idx1 = (header->size);
-//      idx2 = idx1 + size;
-// 
-//      // Copy the characters
-//      int i;
-//      int j;
-//      for (i = idx1, j = 0; i < idx2; i++, j++)
-//          t[i] = str[j];
-    //  t[++i] = '\0';
-
-    // Try to get this to work (Finally)
     // Copy the characters
     char *idx1;
     idx1 = &t[(header->size)];
     memcpy(idx1, str, size);
+    // Add null character to end
     t[header->size + size] = '\0';
 
     // Change the size of string to new size
@@ -110,28 +97,72 @@ void table_free(table_str t) {
     free(h);
 }
 
+
+/* Returns the length of the str */
+size_t table_length(table_str t) {
+    if (t == NULL) return -1;
+    return get_header(t)->size;
+}
+
+/* Split the string by a delim and returns and array */
+table_str *table_split(table_str t, const char *delim) {
+    // The 1000 is just an arbitary size
+    int max_size = 100;
+    char **arr = (char **)malloc(sizeof(table_str) * max_size);
+    int count = 0;
+    char *token = strtok(t, delim);
+    size_t size_of_token;
+    table_str t1;
+
+    while ((token = strtok(NULL, delim)) != NULL) {
+        /* 
+         * Create another string
+         * (do check for null char) because strlen fails 
+         */
+        size_of_token = strlen(token);
+        t1 = table_init(size_of_token);
+
+        // +1 for the null char
+        table_add(t1, token, size_of_token + 1);
+         
+        if (count > max_size) {
+            // reallocate the entire array
+            arr = (char **)realloc(arr, sizeof(table_str) * count + 1);
+            if (arr == NULL) exit(-1);
+        }
+        arr[count++] = t1;
+         
+    }
+        
+
+
+    int i;
+    for (i = 0; i < count; i++)
+        printf("%d =  %s\n", i, arr[i]);
+
+    return arr;
+
+
+}
+
 int main() {
     table_str table;
     table = table_init(1);
 
     const char test_str[] = "Hello jhon its been a while";
-    const char test_str1[] = "The BASIC implementation uses a preprocessor that can generate BASIC code that is compatible with both C64 BASIC (CBM v2) and QBasic. The C64 mode has been tested with cbmbasic (the patched version is currently required to fix issues with line input) and the QBasic mode has been tested with qb64";
-
-    clock_t start, end;
-    double cpu_time_used;
-    start = clock();
+    const char test_str1[] = "Scripting a game can be difficult when there are many states that need to handled, but only one script can be attached to a node at a time. Instead of creating a state machine within the player's control script, it would make development simpler if the states were separated out into different classes.There are many ways to implement a state machine with Godot, and some other methods are below:\ 
+                            The player can have a child node for each state, which are called when utilized.\
+                            Enums can be used in conjunction with a match statement.\
+                            The state scripts themselves could be swapped out from a node dynamically at run-time.\
+                            This tutorial will focus only on adding and removing nodes which have a state script attached. Each state script will be an implementation of a different state.";
 
     /* Do the work. */
     table_add(table, test_str , strlen(test_str));
     table_add(table, test_str1, strlen(test_str1));
 
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("Time taken = %lf\n", cpu_time_used); 
-
-    printf("String = %s\n", table);
-    printf("Capacity = %lu\n", get_header(table)->capacity);
-    table_print(table);
+    
+    // split test
+    table_split(table, " ");
 
     table_free(table);
 }
