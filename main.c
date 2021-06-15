@@ -134,11 +134,11 @@ table_str *table_split(table_str t, const char *delim) {
          
     }
         
-
-
-    int i;
-    for (i = 0; i < count; i++)
-        printf("%d =  %s\n", i, arr[i]);
+    /*
+        int i;
+        for (i = 0; i < count; i++)
+            printf("%d =  %s\n", i, arr[i]);
+    */
 
     return arr;
 
@@ -166,3 +166,9 @@ int main() {
 
     table_free(table);
 }
+
+
+
+
+
+
