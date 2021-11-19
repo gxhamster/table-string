@@ -1,21 +1,13 @@
-#define TABLE_STR_IMPL
+#define BUFFER_IMPL
 #include "table_str.h"
 
 
 int main() {
-    table_str table = table_init(10);
+    BufferRegion *r = buffer_region_create();
+    Buffer b1 = buffer_create(r, "hello there", 11);
+    buffer_create(r, "again", 5);
+    Buffer b = buffer_region_get(r, 0);
 
-    char *test_str = "hello";
-
-    table_cat(table, test_str , strlen(test_str));
-
-    table_trim(table);
-
-    table_free(table);
+    buffer_region_dump(r, stdout);
+    buffer_region_free(r);
 }
-
-
-
-
-
-

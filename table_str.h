@@ -1,199 +1,104 @@
 #ifndef TABLE_STR_H
-#define TABLE_STR_H
+#define BUFFER_H
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 
-#define ALLOC_SIZE 100
-#define TABLE_STR_OFFSET(t) t + sizeof(Header)
-#define NULL_CHECK(t) if (t == NULL) exit(-1)
-#define CAPACITY(t) get_header(t)->capacity
 
-typedef char *table_str;
+typedef char *Buffer;
+#ifndef MAX_BUFFER_COUNT
+#define MAX_BUFFER_COUNT 1000
+#endif
+
+
+#define NULL_CHECK(B) if (B == NULL) exit(-1);
+#define MAX_BUFFER_CAP 5
 
 // Structs
-typedef struct Header {
-    size_t capacity;
-    size_t size;
-} Header;
+typedef struct {
+    char *start_ptr;
+    size_t len;
+    size_t cap;
+} BufferHeader;
+
+typedef struct {
+    Buffer cur_buf;
+    int reached_end;
+    size_t idx;
+} BufferRegionIter;
+
+typedef struct {
+    size_t buffer_count;
+    size_t cur_idx;
+    char *next_buffer_pos;
+    BufferHeader headers[MAX_BUFFER_COUNT];
+    char buffer_locations[MAX_BUFFER_COUNT];
+} BufferRegion;
 
 // Function declarations
-table_str table_init(size_t len);
-int table_cat(table_str t, const char *text, size_t len);
-size_t table_length(table_str t);
-void table_print(table_str t);
-table_str table_dup(table_str t);
-table_str table_trim(table_str t);
-table_str *table_split(table_str t, const char *delim);
+BufferRegion *buffer_region_create();
+void buffer_region_free(BufferRegion *r);
+Buffer buffer_create(BufferRegion *r, const char *str, size_t len);
+Buffer buffer_region_get(BufferRegion *r, size_t idx);
+void buffer_region_dump(BufferRegion *r, FILE *stream);
 
 // Private functions
-Header *get_header(table_str t);
-void make_room_table(table_str t, size_t new_len);
 
 // Implementation
-#ifdef TABLE_STR_IMPL
-
-Header *get_header(table_str t) {
-    Header *h = (Header *)(t - sizeof(Header));
-
-    return h;
+#ifdef BUFFER_IMPL
+BufferRegion *buffer_region_create()
+{
+    BufferRegion *region = (BufferRegion *)malloc(sizeof(BufferRegion));
+    region->buffer_count = 0;
+    region->cur_idx = 0;
+    region->next_buffer_pos = region->buffer_locations; return region;
 }
 
-/* Free all the memory asscociated with the string including the header */
-void table_free(table_str t) {
-    NULL_CHECK(t);
-    Header *h = get_header(t);
-    memset(t, 0, h->size);
-    free(h);
+void buffer_region_free(BufferRegion *r)
+{
+    NULL_CHECK(r);
+    r->buffer_count = 0;
+    r->cur_idx = 0;
+    r->next_buffer_pos = NULL;
+    memset(r->headers, 0, MAX_BUFFER_COUNT);
+    memset(r->buffer_locations, 0, MAX_BUFFER_COUNT);
+
+    free(r);
 }
 
-void make_room_table(table_str t, size_t new_len) {
-    NULL_CHECK(t);
+Buffer buffer_region_get(BufferRegion *r, size_t idx)
+{
+    if (idx > MAX_BUFFER_COUNT || idx > r->buffer_count-1 || idx < 0)
+        return NULL;
 
-    Header *header = get_header(t);
-    void *new_sh;
+    BufferHeader h = r->headers[idx];
+    return h.start_ptr;
+}
 
+void buffer_region_dump(BufferRegion *r, FILE *stream)
+{
+    NULL_CHECK(r);
+    int i;
+    for (i = 0; i < r->buffer_count; i++) {
+        fprintf(stream, "%s\n", r->headers[i].start_ptr);
+    }
+}
 
-    if (new_len < header->size || new_len < header->capacity) {
-        fprintf(stderr, "ERROR: New length is smaller than current size and capacity");
+Buffer buffer_create(BufferRegion *r, const char *str, size_t len)
+{
+    if (len > MAX_BUFFER_CAP) {
+        fprintf(stderr, "ERROR: string length is greater than max capacity\n");
         exit(-1);
     }
-
-    header->capacity += new_len;
-    new_sh = realloc(header, sizeof(Header) + (header->capacity));
-    NULL_CHECK(new_sh);
-
-    Header *new_header = (Header *)new_sh;
-    new_header->size = header->size;
-    new_header->capacity = header->capacity;
-
-    strcpy(TABLE_STR_OFFSET(new_sh), t);
-    table_free(t);
-    t = new_sh + sizeof(Header);
-}
-
-
-int table_cat(table_str t, const char *str, size_t size) {
-    NULL_CHECK(t);
-    void *sh;
-    Header *header = get_header(t);
-
-    sh = (void *)header;
-    void *new_sh;
-
-    if (header->capacity < header->size + size) {
-        // +1 for the null character
-        make_room_table(t, size + 1);
-    }
-
-
-    // Copy the characters
-    char *idx1;
-    idx1 = &t[(header->size)];
-    memcpy(idx1, str, size);
-    t[header->size + size] = '\0';
-
-    header->size += size;
-
-    return header->size;
-}
-
-
-/*
-   Advised to use this function over printf because printf works based on \0 chars
-   This function uses the length of the array from the header
- */
-void table_print(table_str t) {
-    NULL_CHECK(t);
-    int i;
-    size_t size = get_header(t)->size;
-    for (i = 0; i < size; i++) {
-        printf("%c", t[i]);
-    }
-    printf("\n");
-}
-
-table_str table_init(size_t len) {
-    void *sh = (void *)malloc(sizeof(Header)+ len);
-    NULL_CHECK(sh);
-
-    Header *h  = (Header *) sh;
-    h->size = 0;
-    h->capacity = len;
-
-    table_str s = (table_str)(TABLE_STR_OFFSET(sh));
-    memset(s, 0, h->size);
-
-    return s;
-}
-
-
-
-/* Returns the length of the str */
-size_t table_length(table_str t) {
-    NULL_CHECK(t);
-    return get_header(t)->size;
-}
-
-/* Split the string by a delim and returns and array */
-table_str *table_split(table_str t, const char *delim) {
-    NULL_CHECK(t);
-
-    int max_size = 100;
-    char **arr = (char **)malloc(sizeof(table_str) * max_size);
-    int count = 0;
-    char *token = strtok(t, delim);
-    size_t size_of_token;
-    table_str t1;
-
-    while ((token = strtok(NULL, delim)) != NULL) {
-        size_of_token = strlen(token);
-        t1 = table_init(size_of_token);
-
-        // +1 for the null char
-        table_cat(t1, token, size_of_token + 1);
-
-        if (count > max_size) {
-            arr = (char **)realloc(arr, sizeof(table_str) * count + 1);
-            if (arr == NULL) exit(-1);
-        }
-        arr[count++] = t1;
-
-    }
-
-    return arr;
-}
-
-table_str table_dup(table_str t)
-{
-    NULL_CHECK(t);
-    table_str dup = table_init(CAPACITY(t));
-    strcpy(dup, t);
-    return dup;
-}
-
-table_str table_trim(table_str t)
-{
-    size_t size = table_length(t);
-    char *temp, *temp1;
-    table_str t1 = table_dup(t);
-    // Skips all whitespace at begin
-    for (temp = t1; isspace(*temp); temp++)
-        ;
-    int i;
-    //    hello    \0
-    for (temp1 = (char *)(t1 + size -1), i = 0;
-         isspace(*temp1);
-         temp1--, i++) {
-        *temp1 = '\0';
-    }
-    table_str trimmed = table_init(CAPACITY(t));
-    table_cat(trimmed, temp, strlen(temp));
-    table_free(t1);
-
-    return trimmed;
+    r->headers[r->cur_idx].len = len;
+    r->headers[r->cur_idx].cap = MAX_BUFFER_CAP;
+    r->headers[r->cur_idx].start_ptr = r->next_buffer_pos;
+    memcpy(r->headers[r->cur_idx].start_ptr, str, len+1);
+    r->next_buffer_pos = r->headers[r->cur_idx].start_ptr + r->headers[r->cur_idx].len + 1;
+    r->buffer_count += 1;
+    return r->headers[r->cur_idx++].start_ptr;
 }
 
 #endif
