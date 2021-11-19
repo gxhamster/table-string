@@ -3,11 +3,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 
 #define ALLOC_SIZE 100
 #define TABLE_STR_OFFSET(t) t + sizeof(Header)
 #define NULL_CHECK(t) if (t == NULL) exit(-1)
+#define CAPACITY(t) get_header(t)->capacity
 
 typedef char *table_str;
 
@@ -22,6 +24,8 @@ table_str table_init(size_t len);
 int table_cat(table_str t, const char *text, size_t len);
 size_t table_length(table_str t);
 void table_print(table_str t);
+table_str table_dup(table_str t);
+table_str table_trim(table_str t);
 table_str *table_split(table_str t, const char *delim);
 
 // Private functions
@@ -160,6 +164,36 @@ table_str *table_split(table_str t, const char *delim) {
     }
 
     return arr;
+}
+
+table_str table_dup(table_str t)
+{
+    NULL_CHECK(t);
+    table_str dup = table_init(CAPACITY(t));
+    strcpy(dup, t);
+    return dup;
+}
+
+table_str table_trim(table_str t)
+{
+    size_t size = table_length(t);
+    char *temp, *temp1;
+    table_str t1 = table_dup(t);
+    // Skips all whitespace at begin
+    for (temp = t1; isspace(*temp); temp++)
+        ;
+    int i;
+    //    hello    \0
+    for (temp1 = (char *)(t1 + size -1), i = 0;
+         isspace(*temp1);
+         temp1--, i++) {
+        *temp1 = '\0';
+    }
+    table_str trimmed = table_init(CAPACITY(t));
+    table_cat(trimmed, temp, strlen(temp));
+    table_free(t1);
+
+    return trimmed;
 }
 
 #endif

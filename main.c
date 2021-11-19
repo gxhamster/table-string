@@ -7,12 +7,9 @@ int main() {
 
     char *test_str = "hello";
 
-    /* Do the work. */
     table_cat(table, test_str , strlen(test_str));
 
-    
-    // split test
-    table_split(table, " ");
+    table_trim(table);
 
     table_free(table);
 }
