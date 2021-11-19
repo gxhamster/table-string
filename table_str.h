@@ -6,15 +6,18 @@
 #include <ctype.h>
 #include <string.h>
 
-
 typedef char *Buffer;
+
 #ifndef MAX_BUFFER_COUNT
-#define MAX_BUFFER_COUNT 1000
+#define MAX_BUFFER_COUNT 300000
 #endif
 
+#ifndef MAX_BUFFER_CAP
+#define MAX_BUFFER_CAP 50
+#endif
 
 #define NULL_CHECK(B) if (B == NULL) exit(-1);
-#define MAX_BUFFER_CAP 5
+
 
 // Structs
 typedef struct {
@@ -31,6 +34,7 @@ typedef struct {
 
 typedef struct {
     size_t buffer_count;
+    size_t buffer_total_len;
     size_t cur_idx;
     char *next_buffer_pos;
     BufferHeader headers[MAX_BUFFER_COUNT];
@@ -51,9 +55,12 @@ void buffer_region_dump(BufferRegion *r, FILE *stream);
 BufferRegion *buffer_region_create()
 {
     BufferRegion *region = (BufferRegion *)malloc(sizeof(BufferRegion));
+    NULL_CHECK(region);
     region->buffer_count = 0;
     region->cur_idx = 0;
-    region->next_buffer_pos = region->buffer_locations; return region;
+    region->next_buffer_pos = region->buffer_locations;
+    region->buffer_total_len = 0;
+    return region;
 }
 
 void buffer_region_free(BufferRegion *r)
@@ -92,8 +99,18 @@ Buffer buffer_create(BufferRegion *r, const char *str, size_t len)
         fprintf(stderr, "ERROR: string length is greater than max capacity\n");
         exit(-1);
     }
+    if (r->buffer_count > MAX_BUFFER_COUNT) {
+        fprintf(stderr, "ERROR: cannot add any more strings to region\n");
+        exit(-1);
+    }
+    if (r->buffer_total_len > MAX_BUFFER_COUNT) {
+        fprintf(stderr, "ERROR: buffer region full\n");
+        exit(-1);
+    }
+
     r->headers[r->cur_idx].len = len;
     r->headers[r->cur_idx].cap = MAX_BUFFER_CAP;
+    r->buffer_total_len += len + 1;
     r->headers[r->cur_idx].start_ptr = r->next_buffer_pos;
     memcpy(r->headers[r->cur_idx].start_ptr, str, len+1);
     r->next_buffer_pos = r->headers[r->cur_idx].start_ptr + r->headers[r->cur_idx].len + 1;
